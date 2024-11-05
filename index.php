@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Item Generator</title>
+    <style>
+        body, html { 
+            font-family: Arial, sans-serif;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0;
+            background-color: #ccc;
+        }
+
+        #app { 
+            width: 100%; 
+            text-align: center; 
+        }
+
+        .screen { 
+            display: none; 
+        }
+
+        .visible { 
+            display: block; 
+        }
+
+        .item-slot { 
+            width: 100px; 
+            height: 100px; 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            flex-direction: column; 
+            margin: 5px; 
+            color: #fff; 
+            border-radius: 8px; 
+            animation: fadeIn 0.5s ease; 
+            position: relative; 
+            padding: 5px;
+        }
+
+        .item-number {
+            position: absolute;
+            top: 100%;
+            font-size: 2em;
+            color: #333;
+            background: #fff;
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+
+        #item-slots {
+            display: flex;
+            justify-content: center;
+            flex-wrap: nowrap;
+            height: auto;
+            margin-top: 20px;
+            padding-bottom: 30px;
+        }
+
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: scale(0.8); } 
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .btn { 
+            padding: 10px 20px;
+            cursor: pointer; 
+            background-color: #4CAF50; 
+            color: white; 
+            border: none; 
+            border-radius: 5px;
+            margin-top: 15px; 
+        }
+        .btn:disabled { 
+            background-color: #ccc;
+        }
+
+        .item-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div id="main-page" class="screen visible">
+        <h2>Random Item Slots</h2>
+        <label for="settingsDropdown">Choose Item Set:</label>
+        <select id="settingsDropdown"></select>
+        <button class="btn" onclick="generateItems()">Generate Items</button>
+        <div id="item-slots"></div>
+        <button class="btn" onclick="showSettings()">Settings</button>
+    </div>
+
+    <div id="settings-page" class="screen">
+        <h2>Settings (Password Protected)</h2>
+        <div id="password-section">
+            <label>Password: <input type="password" id="password" /></label>
+            <button class="btn" onclick="verifyPassword()">Enter</button>
+        </div>
+
+        <div id="settings-section" style="display: none;">
+            <label>Settings Name: <input type="text" id="settingsName" placeholder="Enter a unique name"></label>
+            <button class="btn" onclick="newSetting()">New Setting</button>
+            <button class="btn" onclick="loadSelectedSetting()">Load Selected Setting</button>
+            <button class="btn" onclick="deleteSetting()">Delete Selected Setting</button>
+            <select id="existingSettingsDropdown"></select>
+            <div id="items-container"></div>
+            <button class="btn" onclick="addItem()">Add Item</button>
+            <label>Total Slots: <input type="number" id="totalSlots" min="1" required></label>
+            <button class="btn" onclick="saveSettings()">Save Settings</button>
+            <button class="btn" onclick="showMain()">Back to Main</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Password to access settings
+const password = '0000';
+
+function showMain() {
+    document.getElementById('main-page').classList.add('visible');
+    document.getElementById('settings-page').classList.remove('visible');
+    loadSettingsDropdown();
+}
+
+function showSettings() {
+    document.getElementById('main-page').classList.remove('visible');
+    document.getElementById('settings-page').classList.add('visible');
+    document.getElementById('password-section').style.display = 'block';
+    document.getElementById('settings-section').style.display = 'none';
+}
+
+function verifyPassword() {
+    const inputPassword = document.getElementById('password').value;
+    if (inputPassword === password) {
+        document.getElementById('password-section').style.display = 'none';
+        document.getElementById('settings-section').style.display = 'block';
+        loadExistingSettings();
+    } else {
+        alert("Incorrect password.");
+    }
+}
+
+function loadSettingsDropdown() {
+    const settingsDropdown = document.getElementById('settingsDropdown');
+    settingsDropdown.innerHTML = '';
+    const allSettings = JSON.parse(localStorage.getItem('allSettings')) || {};
+
+    for (const settingName in allSettings) {
+        const option = document.createElement('option');
+        option.value = settingName;
+        option.textContent = settingName;
+        settingsDropdown.appendChild(option);
+    }
+}
+
+function loadExistingSettings() {
+    const dropdown = document.getElementById('existingSettingsDropdown');
+    dropdown.innerHTML = '';
+    const allSettings = JSON.parse(localStorage.getItem('allSettings')) || {};
+
+    for (const settingName in allSettings) {
+        const option = document.createElement('option');
+        option.value = settingName;
+        option.textContent = settingName;
+        dropdown.appendChild(option);
+    }
+}
+
+function loadSelectedSetting() {
+    const selectedSetting = document.getElementById('existingSettingsDropdown').value;
+    if (!selectedSetting) return;
+
+    const allSettings = JSON.parse(localStorage.getItem('allSettings')) || {};
+    const { items, totalSlots } = allSettings[selectedSetting] || { items: [], totalSlots: 10 };
+
+    document.getElementById('settingsName').value = selectedSetting;
+    document.getElementById('totalSlots').value = totalSlots;
+    document.getElementById('items-container').innerHTML = '';
+    items.forEach((item) => addItem(item));
+}
+
+function deleteSetting() {
+    const selectedSetting = document.getElementById('existingSettingsDropdown').value;
+    if (!selectedSetting) return;
+
+    const allSettings = JSON.parse(localStorage.getItem('allSettings')) || {};
+    delete allSettings[selectedSetting];
+    localStorage.setItem('allSettings', JSON.stringify(allSettings));
+    alert("Setting deleted.");
+    loadExistingSettings();
+    loadSettingsDropdown();
+}
+
+function newSetting() {
+    document.getElementById('settingsName').value = '';
+    document.getElementById('items-container').innerHTML = '';
+    document.getElementById('totalSlots').value = 1;
+}
+
+function addItem(item = {}) {
+    const container = document.getElementById('items-container');
+    const itemElement = document.createElement('div');
+    itemElement.className = 'item-container';
+    itemElement.innerHTML = `
+        <label>Name: <input type="text" value="${item.name || ''}" class="item-name"></label>
+        <label>Color: <input type="color" value="${item.color || '#ff0000'}" class="item-color"></label>
+        <label>Percentage: <input type="number" min="1" max="100" value="${item.percentage || 10}" class="item-percentage"></label>
+        <button class="btn" onclick="deleteItem(this)">Delete</button>
+    `;
+    container.appendChild(itemElement);
+}
+
+function deleteItem(button) {
+    const itemElement = button.parentElement;
+    itemElement.remove();
+}
+
+function saveSettings() {
+    const settingsName = document.getElementById('settingsName').value.trim();
+    if (!settingsName) {
+        alert("Please enter a unique settings name.");
+        return;
+    }
+
+    const items = [];
+    document.querySelectorAll('#items-container > .item-container').forEach((itemElement) => {
+        items.push({
+            name: itemElement.querySelector('.item-name').value,
+            color: itemElement.querySelector('.item-color').value,
+            percentage: parseInt(itemElement.querySelector('.item-percentage').value)
+        });
+    });
+
+    const totalSlots = parseInt(document.getElementById('totalSlots').value);
+    const allSettings = JSON.parse(localStorage.getItem('allSettings')) || {};
+    allSettings[settingsName] = { items, totalSlots };
+
+    localStorage.setItem('allSettings', JSON.stringify(allSettings));
+    alert("Settings saved!");
+    loadExistingSettings();
+}
+
+function generateItems() {
+    const selectedSetting = document.getElementById('settingsDropdown').value;
+    const allSettings = JSON.parse(localStorage.getItem('allSettings')) || {};
+    const { items, totalSlots } = allSettings[selectedSetting] || { items: [], totalSlots: 10 };
+
+    let generatedItems = [];
+    let slotsFilled = 0;
+
+    items.forEach(item => {
+        const itemCount = Math.round(totalSlots * (item.percentage / 100));
+        for (let i = 0; i < itemCount; i++) {
+            generatedItems.push(item);
+        }
+        slotsFilled += itemCount;
+    });
+
+    while (generatedItems.length < totalSlots) {
+        const randomItem = items[Math.floor(Math.random() * items.length)];
+        generatedItems.push(randomItem);
+    }
+
+    generatedItems = generatedItems.sort(() => Math.random() - 0.5);
+
+    const itemSlotsContainer = document.getElementById('item-slots');
+    itemSlotsContainer.innerHTML = '';
+    generatedItems.forEach((item, index) => {
+        const slot = document.createElement('div');
+        slot.className = 'item-slot';
+        slot.style.backgroundColor = item.color;
+        slot.textContent = item.name;
+
+        const slotNumber = document.createElement('div');
+        slotNumber.className = 'item-number';
+        slotNumber.textContent = index + 1;
+        slot.appendChild(slotNumber);
+
+        itemSlotsContainer.appendChild(slot);
+    });
+}
+</script>
+
+</body>
+</html>
