@@ -13,6 +13,7 @@
             height: 100vh; 
             margin: 0;
             background-color: #ccc;
+            width: 100%;
         }
 
         #app { 
@@ -29,18 +30,19 @@
         }
 
         .item-slot { 
-            width: 100px; 
+            flex-grow: 1;
             height: 100px; 
             display: inline-flex; 
             align-items: center; 
             justify-content: center; 
             flex-direction: column; 
-            margin: 5px; 
+            margin: 5px 0; /* Reduced margin to prevent gaps */
             color: #fff; 
             border-radius: 8px; 
             animation: fadeIn 0.5s ease; 
             position: relative; 
             padding: 5px;
+            margin: 5px;
         }
 
         .item-number {
@@ -124,7 +126,7 @@
 
 <script>
 // Password to access settings
-const password = '0000';
+const password = '';
 
 function showMain() {
     document.getElementById('main-page').classList.add('visible');
@@ -275,10 +277,13 @@ function generateItems() {
 
     const itemSlotsContainer = document.getElementById('item-slots');
     itemSlotsContainer.innerHTML = '';
+    const slotWidth = 100 / totalSlots; // Calculate width based on total slots
+
     generatedItems.forEach((item, index) => {
         const slot = document.createElement('div');
         slot.className = 'item-slot';
         slot.style.backgroundColor = item.color;
+        slot.style.flexBasis = `${slotWidth}vw`; // Set width based on total slots
         slot.textContent = item.name;
 
         const slotNumber = document.createElement('div');
@@ -289,6 +294,7 @@ function generateItems() {
         itemSlotsContainer.appendChild(slot);
     });
 }
+
 </script>
 
 </body>
